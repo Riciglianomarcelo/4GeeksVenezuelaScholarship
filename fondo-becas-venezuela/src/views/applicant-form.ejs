@@ -1,0 +1,95 @@
+<%- include('partials/layout-head', { title: isNew ? 'Nuevo postulante' : 'Editar postulante' }) %>
+
+<h1><%= isNew ? 'Nuevo postulante' : 'Editar postulante' %></h1>
+<a href="/admin" class="muted">&larr; Volver al dashboard</a>
+
+<form method="POST" action="<%= isNew ? '/admin/applicants/new' : `/admin/applicants/${applicant.id}/edit` %>" style="margin-top:16px;">
+
+  <div class="card">
+    <h2 style="margin-top:0;">Datos confidenciales — solo visibles aquí en el admin</h2>
+    <div class="row">
+      <div>
+        <label>Nombre completo</label>
+        <input type="text" name="full_name" value="<%= applicant.full_name || '' %>">
+      </div>
+      <div>
+        <label>Email</label>
+        <input type="email" name="email" value="<%= applicant.email || '' %>">
+      </div>
+      <div>
+        <label>Teléfono</label>
+        <input type="text" name="phone" value="<%= applicant.phone || '' %>">
+      </div>
+    </div>
+    <label>Notas internas (texto libre del formulario, documentos, detalles — nunca público)</label>
+    <textarea name="private_notes" rows="6"><%= applicant.private_notes || '' %></textarea>
+  </div>
+
+  <% if (applicant.raw_submission) { %>
+  <div class="card">
+    <h2 style="margin-top:0;">Respuesta completa del formulario (solo lectura, solo admin)</h2>
+    <table>
+      <% Object.entries(applicant.raw_submission).forEach(([k, v]) => { if (!v) return; %>
+        <tr>
+          <td style="width:260px;font-weight:600;"><%= k %></td>
+          <td style="white-space:pre-wrap;">
+            <% if (typeof v === 'string' && v.startsWith('http')) { %>
+              <a href="<%= v %>" target="_blank"><%= v %></a>
+            <% } else { %>
+              <%= v %>
+            <% } %>
+          </td>
+        </tr>
+      <% }) %>
+    </table>
+  </div>
+  <% } %>
+
+  <div class="card">
+    <h2 style="margin-top:0;">Datos públicos — se muestran en el sitio si activas "Pública"</h2>
+    <div class="row">
+      <div>
+        <label>Nombre público (ej. "María G.")</label>
+        <input type="text" name="public_name" value="<%= applicant.public_name || '' %>" required>
+      </div>
+      <div>
+        <label>Edad</label>
+        <input type="number" name="age" value="<%= applicant.age || '' %>">
+      </div>
+      <div>
+        <label>Ubicación (ciudad)</label>
+        <input type="text" name="location" value="<%= applicant.location || '' %>">
+      </div>
+      <div>
+        <label>Estado</label>
+        <select name="status">
+          <% STATUS_OPTIONS.forEach(s => { %>
+            <option value="<%= s %>" <%= applicant.status === s ? 'selected' : '' %>><%= s %></option>
+          <% }) %>
+        </select>
+      </div>
+    </div>
+
+    <label>Historia breve (solo lo que la persona autorizó hacer público)</label>
+    <textarea name="story" rows="3"><%= applicant.story || '' %></textarea>
+
+    <label>Necesidades</label>
+    <% const currentNeeds = Array.isArray(applicant.needs) ? applicant.needs : []; NEED_OPTIONS.forEach(n => { %>
+      <label style="display:inline-block; margin-right:16px; font-weight:400;">
+        <input type="checkbox" name="needs" value="<%= n %>" style="width:auto;display:inline-block;" <%= currentNeeds.includes(n) ? 'checked' : '' %>>
+        <%= n %>
+      </label>
+    <% }) %>
+
+    <div style="margin-top:16px;">
+      <label>
+        <input type="checkbox" name="is_public" style="width:auto;display:inline-block;" <%= applicant.is_public ? 'checked' : '' %>>
+        Mostrar públicamente en el sitio
+      </label>
+    </div>
+  </div>
+
+  <button type="submit"><%= isNew ? 'Crear postulante' : 'Guardar cambios' %></button>
+</form>
+
+<%- include('partials/layout-foot') %>
