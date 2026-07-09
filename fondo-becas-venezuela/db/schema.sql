@@ -63,3 +63,24 @@ CREATE TABLE IF NOT EXISTS upcoming_dates (
   abierto BOOLEAN NOT NULL DEFAULT true,
   sort_order INT NOT NULL DEFAULT 0
 );
+
+-- Ofrecimientos de donación de equipos (laptops, computadoras, etc.) hechos
+-- por empresas o personas desde el formulario público de "Donar equipos".
+-- La foto se guarda directo en la base (bytea) para no depender de
+-- almacenamiento de archivos externo/persistente en Railway.
+CREATE TABLE IF NOT EXISTS equipment_donations (
+  id SERIAL PRIMARY KEY,
+  donor_name TEXT,
+  donor_email TEXT,
+  donor_phone TEXT,
+  item_type TEXT,          -- laptop | desktop | tablet | otro
+  model TEXT,
+  quantity INT NOT NULL DEFAULT 1,
+  condition_desc TEXT,      -- estado del equipo
+  estimated_value NUMERIC(12,2),
+  description TEXT,
+  photo BYTEA,
+  photo_mimetype TEXT,
+  status TEXT NOT NULL DEFAULT 'pending', -- pending | coordinating | received
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

@@ -53,16 +53,70 @@ function loadTypeformEmbed(typeformId) {
 async function loadConfig() {
   const cfg = await fetchJSON('/api/config');
   if (!cfg) return;
+  window.__stripeBaseLink = cfg.stripeLink || '#';
   document.getElementById('stripe-link-general').href = cfg.stripeLink || '#';
-  document.getElementById('stripe-link-persona').href = cfg.stripeLink || '#';
   document.getElementById('form-link').href = cfg.applicationFormUrl || '#';
   loadTypeformEmbed(cfg.typeformId);
+  applyStripePersonaLink();
 
   const qrHtml = cfg.zelleQrPath
     ? `<img src="${cfg.zelleQrPath}" alt="QR de Zelle para 4GEEKS, LLC" onerror="this.parentElement.innerHTML='<span>QR de Zelle<br>(sube la imagen a ' + '${cfg.zelleQrPath}' + ')</span>'">`
     : '<span>QR de Zelle<br>(pendiente de subir imagen)</span>';
   document.getElementById('qr-box-general').innerHTML = qrHtml;
   document.getElementById('qr-box-persona').innerHTML = qrHtml;
+}
+
+// -----------------------------------------------------------------------
+// Selección de "apoyar a una persona específica" — al hacer click en
+// "Apoyar a X" desde una historia, guardamos la selección y armamos el
+// link de Stripe con ?client_reference_id=applicant_ID, para que la
+// donación quede vinculada automáticamente a esa persona (ver
+// src/routes/webhooks.js). Para Zelle (que no lleva datos estructurados)
+// se le pide al donante escribir el nombre en la nota de la transferencia.
+// -----------------------------------------------------------------------
+let selectedPersona = null; // { id, name }
+
+function applyStripePersonaLink() {
+  const base = window.__stripeBaseLink || '#';
+  const link = document.getElementById('stripe-link-persona');
+  if (!link) return;
+  if (selectedPersona && base !== '#') {
+    const sep = base.includes('?') ? '&' : '?';
+    link.href = `${base}${sep}client_reference_id=applicant_${selectedPersona.id}`;
+  } else {
+    link.href = base;
+  }
+}
+
+function updatePersonaSelection(id, name) {
+  selectedPersona = { id, name };
+  const banner = document.getElementById('persona-selected-banner');
+  const nameEl = document.getElementById('persona-selected-name');
+  if (banner && nameEl) {
+    nameEl.textContent = name;
+    banner.style.display = 'flex';
+  }
+  const stripeDesc = document.getElementById('stripe-desc-persona');
+  if (stripeDesc) stripeDesc.innerHTML = `Tu aporte quedará vinculado automáticamente a <b>${name}</b>.`;
+  const zelleDesc = document.getElementById('zelle-desc-persona');
+  if (zelleDesc) zelleDesc.innerHTML = `Envía tu aporte a <b>4GEEKS, LLC</b> y escribe "<b>${name}</b>" en la nota de tu transferencia.`;
+  applyStripePersonaLink();
+}
+
+function clearPersonaSelection() {
+  selectedPersona = null;
+  const banner = document.getElementById('persona-selected-banner');
+  if (banner) banner.style.display = 'none';
+  const stripeDesc = document.getElementById('stripe-desc-persona');
+  if (stripeDesc) stripeDesc.textContent = 'Elige una persona en la sección de Historias para que tu aporte quede vinculado automáticamente a su nombre, o escribe su nombre en la nota del pago.';
+  const zelleDesc = document.getElementById('zelle-desc-persona');
+  if (zelleDesc) zelleDesc.innerHTML = 'Envía tu aporte a <b>4GEEKS, LLC</b> y menciona el nombre de la persona en la nota de tu transferencia.';
+  applyStripePersonaLink();
+}
+
+function initPersonaSelection() {
+  const clearBtn = document.getElementById('persona-clear-btn');
+  if (clearBtn) clearBtn.addEventListener('click', clearPersonaSelection);
 }
 
 async function loadSummary() {
@@ -105,23 +159,42 @@ async function loadApplicants() {
     const needs = (p.needs || []).map(n => NEED_LABELS[n]
       ? `<span class="need-pill ${NEED_LABELS[n][1]}">${NEED_LABELS[n][0]}</span>` : '').join('');
     const meta = [p.age ? `${p.age} años` : null, p.location].filter(Boolean).join(' · ');
+    const storyText = p.story || '';
+    const isLong = storyText.length > 110;
+    const firstName = p.public_name.split(' ')[0];
     return `
       <div class="card persona-card">
-        <div class="persona-photo">${initials}</div>
         <div class="persona-body">
-          <div class="meta">${meta}</div>
-          <h4>${p.public_name}</h4>
-          <p>${p.story || ''}</p>
+          <div class="persona-head">
+            <div class="persona-avatar">${initials}</div>
+            <div class="persona-head-text">
+              <h4>${p.public_name}</h4>
+              <div class="meta">${meta}</div>
+            </div>
+          </div>
+          <p class="story-text" id="story-${p.id}">${storyText}</p>
+          ${isLong ? `<button type="button" class="story-toggle" data-target="story-${p.id}">Ver más</button>` : ''}
           <div class="need-pills">${needs}</div>
-          <a href="#donar" class="pill pill-primary" data-support="${p.public_name.split(' ')[0]}">Apoyar a ${p.public_name.split(' ')[0]} →</a>
+          <a href="#donar" class="pill pill-primary" data-support data-support-id="${p.id}" data-support-name="${p.public_name}">Apoyar a ${firstName} →</a>
         </div>
       </div>
     `;
   }).join('');
 
-  grid.querySelectorAll('[data-support]').forEach(btn => {
+  grid.querySelectorAll('.story-toggle').forEach(btn => {
     btn.addEventListener('click', () => {
+      const target = document.getElementById(btn.dataset.target);
+      const expanded = target.classList.toggle('expanded');
+      btn.textContent = expanded ? 'Ver menos' : 'Ver más';
+    });
+  });
+
+  grid.querySelectorAll('[data-support]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      updatePersonaSelection(btn.dataset.supportId, btn.dataset.supportName);
       document.querySelector('[data-tab="persona"]').click();
+      document.getElementById('donar').scrollIntoView({ behavior: 'smooth' });
     });
   });
 }
@@ -164,15 +237,56 @@ function renderFaq() {
   });
 }
 
+function openDonarTab(which) {
+  const btn = document.querySelector(`.tab-btn[data-tab="${which}"]`);
+  if (btn) btn.click();
+}
+
 function initTabs() {
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       const which = btn.dataset.tab;
-      document.getElementById('panel-general').classList.toggle('active', which === 'general');
-      document.getElementById('panel-persona').classList.toggle('active', which === 'persona');
+      ['general', 'persona', 'equipos'].forEach(name => {
+        const panel = document.getElementById('panel-' + name);
+        if (panel) panel.classList.toggle('active', which === name);
+      });
     });
+  });
+
+  // Links en cualquier parte del sitio con data-open-tab="equipos" (o
+  // "persona"/"general") saltan directo a esa pestaña dentro de Donar.
+  document.querySelectorAll('[data-open-tab]').forEach(link => {
+    link.addEventListener('click', () => {
+      setTimeout(() => openDonarTab(link.dataset.openTab), 0);
+    });
+  });
+}
+
+function initEquipoForm() {
+  const form = document.getElementById('equipo-form');
+  if (!form) return;
+  const status = document.getElementById('equipo-form-status');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    status.textContent = 'Enviando…';
+    status.className = 'form-status';
+    try {
+      const res = await fetch('/api/equipment-donations', {
+        method: 'POST',
+        body: new FormData(form)
+      });
+      if (!res.ok) throw new Error('request failed');
+      status.textContent = '¡Gracias! Recibimos tu ofrecimiento y te contactaremos para coordinar la entrega.';
+      status.className = 'form-status ok';
+      form.reset();
+    } catch (err) {
+      console.error('Error enviando donación de equipo:', err);
+      status.textContent = 'No pudimos enviar el formulario. Escríbenos a latam@4geeksacademy.com si el problema persiste.';
+      status.className = 'form-status error';
+    }
   });
 }
 
@@ -187,6 +301,8 @@ function initNav() {
 document.addEventListener('DOMContentLoaded', () => {
   initTabs();
   initNav();
+  initPersonaSelection();
+  initEquipoForm();
   renderFaq();
   loadConfig();
   loadSummary();

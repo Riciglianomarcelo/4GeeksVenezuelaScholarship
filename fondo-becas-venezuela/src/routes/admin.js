@@ -164,4 +164,26 @@ router.post('/dates/:id/delete', wrap(async (req, res) => {
   res.redirect('/admin');
 }));
 
+// -------- Donaciones de equipos ofrecidas desde el sitio público --------
+const EQUIPMENT_STATUS_OPTIONS = ['pending', 'coordinating', 'received'];
+
+router.get('/equipment', wrap(async (req, res) => {
+  const { rows } = await pool.query(
+    'SELECT * FROM equipment_donations ORDER BY created_at DESC'
+  );
+  res.render('equipment-list', { items: rows, EQUIPMENT_STATUS_OPTIONS });
+}));
+
+router.post('/equipment/:id/status', wrap(async (req, res) => {
+  await pool.query('UPDATE equipment_donations SET status = $1 WHERE id = $2', [
+    req.body.status, req.params.id
+  ]);
+  res.redirect('/admin/equipment');
+}));
+
+router.post('/equipment/:id/delete', wrap(async (req, res) => {
+  await pool.query('DELETE FROM equipment_donations WHERE id = $1', [req.params.id]);
+  res.redirect('/admin/equipment');
+}));
+
 module.exports = router;

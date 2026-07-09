@@ -74,7 +74,7 @@
     <textarea name="story" rows="3"><%= applicant.story || '' %></textarea>
 
     <label>Necesidades</label>
-    <% const currentNeeds = applicant.needs || []; NEED_OPTIONS.forEach(n => { %>
+    <% const currentNeeds = Array.isArray(applicant.needs) ? applicant.needs : []; NEED_OPTIONS.forEach(n => { %>
       <label style="display:inline-block; margin-right:16px; font-weight:400;">
         <input type="checkbox" name="needs" value="<%= n %>" style="width:auto;display:inline-block;" <%= currentNeeds.includes(n) ? 'checked' : '' %>>
         <%= n %>

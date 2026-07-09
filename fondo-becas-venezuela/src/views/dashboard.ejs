@@ -49,7 +49,7 @@
       <tr>
         <td><b><%= a.public_name %></b><br><span class="muted"><%= a.full_name || '' %></span></td>
         <td><%= a.location || '—' %><% if(a.age){ %> · <%= a.age %> años<% } %></td>
-        <td><% (a.needs||[]).forEach(n => { %><span class="pill-inline"><%= n %></span><% }) %></td>
+        <td><% (Array.isArray(a.needs) ? a.needs : []).forEach(n => { %><span class="pill-inline"><%= n %></span><% }) %></td>
         <td><%= a.status %></td>
         <td><span class="badge <%= a.is_public ? 'badge-public' : 'badge-private' %>"><%= a.is_public ? 'Pública' : 'Privada' %></span></td>
         <td><%= a.source %></td>

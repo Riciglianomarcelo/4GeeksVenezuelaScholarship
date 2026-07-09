@@ -7,17 +7,62 @@ Railway directo desde GitHub.
 ## Qué incluye
 
 - **Sitio público** (`/`): hero, manifiesto, programa AI Engineering,
-  cómo ayudar, donar (Stripe + Zelle), historias de postulantes,
-  transparencia, postulación (Typeform incrustado), calendario, FAQ.
+  cómo ayudar, donar (Stripe + Zelle + donar equipos), transparencia,
+  historias de postulantes, postulación (Typeform incrustado), calendario, FAQ.
 - **API pública** (`/api/*`): datos que consume el sitio (resumen del
-  fondo, postulantes públicos, fechas, config de links).
+  fondo, postulantes públicos, fechas, config de links, donaciones de equipos).
 - **Panel admin** (`/admin`, protegido con usuario/clave): gestión de
   postulantes (datos confidenciales vs públicos), estadísticas del fondo,
-  donaciones manuales, fechas de cohortes.
-- **Webhooks**: Stripe (registra donaciones automáticamente) y
-  Typeform (crea postulantes automáticamente desde el formulario).
+  donaciones manuales, fechas de cohortes, y donaciones de equipos ofrecidas
+  (`/admin/equipment`).
+- **Webhooks**: Stripe (registra donaciones automáticamente, vinculadas a
+  una persona específica si se donó desde su historia) y Typeform (crea
+  postulantes automáticamente desde el formulario).
+- **Alertas por email**: aviso automático cuando entra una donación por
+  Stripe, una postulación nueva, o un ofrecimiento de donación de equipos.
 - **Import de Typeform** (`scripts/import-typeform-csv.js`): carga masiva
   de respuestas ya existentes desde un CSV exportado de Typeform.
+
+### Donar a una persona específica — cómo queda vinculado
+
+Al hacer click en "Apoyar a [nombre]" en una historia, el sitio guarda esa
+selección y arma el link de Stripe agregando `?client_reference_id=applicant_ID`.
+Stripe devuelve ese mismo valor en el webhook, así que la donación se guarda
+en la base ya vinculada a esa persona — sin depender de que el donante
+escriba bien el nombre. Para Zelle (que no permite pasar datos estructurados)
+se le pide al donante escribir el nombre en la nota de la transferencia; el
+equipo la asocia manualmente desde `/admin` si hace falta.
+
+### Donar equipos — formulario propio
+
+La pestaña "Donar equipos" (dentro de la sección Donar) tiene un formulario
+público (contacto, tipo de equipo, modelo, cantidad, estado, costo
+aproximado, descripción y foto opcional). Se guarda en la tabla
+`equipment_donations` — la foto se guarda directo en Postgres (no depende
+de almacenamiento de archivos persistente en Railway). El equipo revisa y
+coordina la logística desde `/admin/equipment`, donde puede cambiar el
+estado (pendiente / coordinando / recibido).
+
+### Alertas por email — setup
+
+Define estas variables en Railway (u opcionalmente en `.env` local) para
+recibir un correo cada vez que entra una donación, postulación o
+donación de equipos:
+
+```
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USER=tu-cuenta@gmail.com
+SMTP_PASS=una-contraseña-de-aplicación   # no tu contraseña normal de Gmail
+SMTP_FROM="Fondo de Becas 4Geeks <tu-cuenta@gmail.com>"
+ALERT_EMAIL_TO=latam@4geeksacademy.com
+```
+
+Con Gmail: Cuenta de Google → Seguridad → Verificación en 2 pasos →
+Contraseñas de aplicaciones → genera una y úsala en `SMTP_PASS`. Cualquier
+otro proveedor SMTP (SendGrid, Mailgun, tu propio hosting) funciona igual.
+Si dejas estas variables vacías, el sitio sigue funcionando normal — solo
+no se envían alertas.
 
 ## Formulario de postulación (Typeform incrustado)
 

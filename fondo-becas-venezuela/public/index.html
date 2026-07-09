@@ -15,13 +15,16 @@
 
 <header>
   <nav>
-    <a class="logo" href="#inicio">4Geeks<span>.</span> <span style="font-weight:600;font-size:14px;">Becas VE</span></a>
+    <a class="logo" href="#inicio">
+      <img src="/images/logo-4geeks-negro-horizontal.svg" alt="4Geeks Academy" class="logo-img">
+      <span class="logo-badge">Becas VE</span>
+    </a>
     <div class="navlinks">
       <a href="#programa">El Programa</a>
       <a href="#ayudar">Cómo Ayudar</a>
       <a href="#donar">Donar</a>
-      <a href="#historias">Historias</a>
       <a href="#transparencia">Transparencia</a>
+      <a href="#historias">Historias</a>
       <a href="#faq">FAQ</a>
     </div>
     <div class="navctas">
@@ -65,13 +68,13 @@
 <section>
   <div class="wrap">
     <span class="eyebrow" style="display:block;text-align:center;">La barrera no es solo económica</span>
-    <h2 class="h2">Para aprender tecnología hacen falta <span class="accent">tres cosas</span></h2>
-    <p class="sub">Una beca sola no alcanza si no hay con qué estudiar. Por eso este fondo ataca los tres obstáculos a la vez.</p>
+    <h2 class="h2">Para hacerte <span class="accent">AI Engineer</span> hacen falta tres cosas</h2>
+    <p class="sub">Aprender a trabajar con máquinas y herramientas de IA no depende solo de la motivación. Una beca sola no alcanza si no hay con qué estudiar — por eso este fondo ataca los tres obstáculos a la vez.</p>
     <div class="need-grid">
       <div class="card need-card">
         <div class="ic ic-blue">🎓</div>
         <h3>Una beca</h3>
-        <p>Acceso económico a un programa de formación en tecnología e IA, evaluado según la situación y necesidad de cada postulante.</p>
+        <p>Acceso económico a un programa de formación en IA aplicada, evaluado según la situación y necesidad de cada postulante.</p>
       </div>
       <div class="card need-card">
         <div class="ic ic-amber">💻</div>
@@ -136,7 +139,7 @@
         <span class="num">02</span>
         <h3>Dona equipos</h3>
         <p>¿Tu empresa está renovando laptops o computadoras? Equipos en buen estado pueden tener una segunda vida como herramienta de aprendizaje.</p>
-        <a href="mailto:latam@4geeksacademy.com?subject=Donación%20de%20equipos%20-%20Fondo%20de%20Becas%20Venezuela" class="pill pill-secondary" style="width:fit-content;">Escríbenos →</a>
+        <a href="#donar" class="pill pill-secondary" style="width:fit-content;" data-open-tab="equipos">Ofrecer equipos →</a>
       </div>
       <div class="card ayudar-card">
         <span class="num">03</span>
@@ -153,11 +156,12 @@
   <div class="wrap">
     <span class="eyebrow">Contribuye ahora</span>
     <h2 class="h2">Elige cómo quieres <span class="accent" style="color:#fff;">aportar</span></h2>
-    <p class="sub">Puedes apoyar el fondo general de becas o elegir a una persona específica dentro de nuestras historias.</p>
+    <p class="sub">Puedes apoyar el fondo general de becas, elegir a una persona específica, o donar equipos en vez de dinero.</p>
 
     <div class="tabs">
       <button class="tab-btn active" data-tab="general">Fondo general</button>
       <button class="tab-btn" data-tab="persona">Persona específica</button>
+      <button class="tab-btn" data-tab="equipos">Donar equipos</button>
     </div>
 
     <div class="donar-panels">
@@ -178,32 +182,88 @@
       </div>
 
       <div class="donar-panel" id="panel-persona">
+        <div class="persona-selected-banner" id="persona-selected-banner" style="display:none;">
+          <span>Apoyando a: <b id="persona-selected-name"></b></span>
+          <button type="button" id="persona-clear-btn">Quitar selección</button>
+        </div>
         <div class="pay-grid">
           <div class="pay-card">
             <h4>Tarjeta / Stripe</h4>
-            <p class="desc">Usa el mismo link de Stripe y escribe el nombre de la persona que quieres apoyar en el campo de nota/mensaje del pago.</p>
+            <p class="desc" id="stripe-desc-persona">Elige una persona en la sección de Historias para que tu aporte quede vinculado automáticamente a su nombre, o escribe su nombre en la nota del pago.</p>
             <a href="#" id="stripe-link-persona" target="_blank" class="pill pill-primary" style="width:100%;justify-content:center;">Donar con Stripe →</a>
           </div>
           <div class="pay-card">
             <h4>Zelle</h4>
-            <p class="desc">Envía tu aporte a <b>4GEEKS, LLC</b> y menciona el nombre de la persona en la nota de tu transferencia.</p>
+            <p class="desc" id="zelle-desc-persona">Envía tu aporte a <b>4GEEKS, LLC</b> y menciona el nombre de la persona en la nota de tu transferencia.</p>
             <div class="qr-box" id="qr-box-persona"><span>QR de Zelle<br>(pendiente de subir imagen final)</span></div>
           </div>
         </div>
         <div class="note-box">👤 Revisa las <a href="#historias" style="color:#fff;text-decoration:underline;">historias de postulantes</a> y elige a quién quieres apoyar directamente.</div>
       </div>
-    </div>
-  </div>
-</section>
 
-<!-- HISTORIAS / PERSONAS -->
-<section id="historias">
-  <div class="wrap">
-    <span class="eyebrow" style="display:block;text-align:center;">Historias reales</span>
-    <h2 class="h2">Apoya a una <span class="accent">persona específica</span></h2>
-    <p class="sub">Perfiles anonimizados de personas postuladas al fondo. Solo se muestra información que cada persona autorizó hacer pública.</p>
-    <div class="historias-grid" id="historias-grid">
-      <p class="empty-note">Cargando historias…</p>
+      <div class="donar-panel" id="panel-equipos">
+        <div class="equipo-form-card">
+          <p class="desc" style="margin-bottom:20px;">¿Tienes laptops, computadoras u otros equipos en buen estado? Cuéntanos qué tienes disponible y coordinamos la logística de entrega.</p>
+          <form id="equipo-form">
+            <div class="row2">
+              <div>
+                <label>Nombre / Empresa</label>
+                <input type="text" name="donor_name" required>
+              </div>
+              <div>
+                <label>Email de contacto</label>
+                <input type="email" name="donor_email" required>
+              </div>
+            </div>
+            <div class="row2">
+              <div>
+                <label>Teléfono (opcional)</label>
+                <input type="text" name="donor_phone">
+              </div>
+              <div>
+                <label>Tipo de equipo</label>
+                <select name="item_type">
+                  <option value="Laptop">Laptop</option>
+                  <option value="Computadora de escritorio">Computadora de escritorio</option>
+                  <option value="Tablet">Tablet</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </div>
+            </div>
+            <div class="row2">
+              <div>
+                <label>Modelo</label>
+                <input type="text" name="model" placeholder="Ej. Dell Latitude 5490">
+              </div>
+              <div>
+                <label>Cantidad</label>
+                <input type="number" name="quantity" min="1" value="1">
+              </div>
+            </div>
+            <div class="row2">
+              <div>
+                <label>Estado del equipo</label>
+                <select name="condition_desc">
+                  <option value="Como nuevo">Como nuevo</option>
+                  <option value="Buen estado">Buen estado</option>
+                  <option value="Usado, funcional">Usado, funcional</option>
+                  <option value="Necesita reparación menor">Necesita reparación menor</option>
+                </select>
+              </div>
+              <div>
+                <label>Costo aproximado (USD, opcional)</label>
+                <input type="number" name="estimated_value" min="0" step="1" placeholder="Ej. 250">
+              </div>
+            </div>
+            <label>Detalles adicionales</label>
+            <textarea name="description" rows="3" placeholder="Especificaciones, accesorios incluidos, ubicación para recoger, etc."></textarea>
+            <label>Foto del equipo (opcional)</label>
+            <input type="file" name="photo" accept="image/*">
+            <button type="submit" class="pill pill-primary" style="width:100%;justify-content:center;margin-top:16px;">Enviar ofrecimiento →</button>
+            <p class="form-status" id="equipo-form-status"></p>
+          </form>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -280,6 +340,18 @@
   </div>
 </section>
 
+<!-- HISTORIAS / PERSONAS -->
+<section id="historias">
+  <div class="wrap">
+    <span class="eyebrow" style="display:block;text-align:center;">Historias reales</span>
+    <h2 class="h2">Apoya a una <span class="accent">persona específica</span></h2>
+    <p class="sub">Perfiles anonimizados de personas postuladas al fondo. Solo se muestra información que cada persona autorizó hacer pública.</p>
+    <div class="historias-grid" id="historias-grid">
+      <p class="empty-note">Cargando historias…</p>
+    </div>
+  </div>
+</section>
+
 <!-- FAQ -->
 <section id="faq" style="background:var(--bg-gray);">
   <div class="wrap">
@@ -305,7 +377,8 @@
   <div class="wrap">
     <div class="foot-grid">
       <div>
-        <h5>4Geeks Academy — Fondo de Becas Venezuela</h5>
+        <img src="/images/logo-4geeks-blanco-horizontal.svg" alt="4Geeks Academy" class="foot-logo-img">
+        <h5>Fondo de Becas Venezuela</h5>
         <p style="max-width:360px;color:#8A93A0;">Un fondo que empezó en USD $50.000 para impulsar el futuro de personas venezolanas a través de la tecnología y la inteligencia artificial — y que crece con cada aporte.</p>
       </div>
       <div>

@@ -1,6 +1,7 @@
 const express = require('express');
 const Stripe = require('stripe');
 const { pool } = require('../db');
+const { sendAlert } = require('../lib/notify');
 
 const formRouter = express.Router();
 
@@ -17,6 +18,12 @@ const formRouter = express.Router();
 // Payment Link -> Add custom field) preguntando "¿A quién deseas apoyar?",
 // ese valor llega en session.custom_fields y lo guardamos como donor_note;
 // el admin puede luego asociarlo manualmente a un postulante desde el panel.
+//
+// Cuando alguien hace click en "Apoyar a X" desde una historia, el sitio
+// arma el link de Stripe agregando ?client_reference_id=applicant_ID. Stripe
+// devuelve ese mismo valor en el webhook (session.client_reference_id), así
+// que la donación queda vinculada AUTOMÁTICAMENTE a esa persona — sin
+// depender de que el donante escriba bien el nombre en una nota.
 // ---------------------------------------------------------------------------
 // Handler standalone (no router) porque debe montarse en server.js ANTES
 // del parser express.json() global, usando express.raw() solo en esta ruta.
@@ -48,13 +55,36 @@ async function stripeWebhookHandler(req, res) {
       note = f.text ? f.text.value : (f.dropdown ? f.dropdown.value : null);
     }
 
+    // Resuelve el postulante vinculado (si el link llevaba
+    // ?client_reference_id=applicant_ID) validando que ese id exista.
+    let applicantId = null;
+    let applicantName = null;
+    const ref = session.client_reference_id || '';
+    const m = ref.match(/^applicant_(\d+)$/);
+    if (m) {
+      try {
+        const chk = await pool.query('SELECT id, public_name FROM applicants WHERE id = $1', [m[1]]);
+        if (chk.rows[0]) {
+          applicantId = chk.rows[0].id;
+          applicantName = chk.rows[0].public_name;
+        }
+      } catch (err) {
+        console.error('No se pudo validar el applicant_id del pago:', err.message);
+      }
+    }
+
     try {
       await pool.query(
         `INSERT INTO donations (applicant_id, donor_name, donor_note, amount, method, stripe_session_id)
-         VALUES (NULL, $1, $2, $3, 'stripe', $4)`,
-        [donorName, note, amount, session.id]
+         VALUES ($1, $2, $3, $4, 'stripe', $5)`,
+        [applicantId, donorName, note, amount, session.id]
       );
       console.log(`✅ Donación Stripe registrada: $${amount}`);
+      sendAlert(
+        'Nueva donación por Stripe',
+        `Monto: $${amount}\nDonante: ${donorName || 'anónimo'}\n` +
+        `${applicantName ? `Apoya a: ${applicantName}` : 'Fondo general'}\n${note ? `Nota: ${note}` : ''}`
+      );
     } catch (err) {
       console.error('Error guardando donación de Stripe:', err);
     }
@@ -109,6 +139,11 @@ formRouter.post('/form', express.json({ limit: '2mb' }), async (req, res) => {
         JSON.stringify(payload),
         extracted.source
       ]
+    );
+    sendAlert(
+      'Nueva postulación al Fondo de Becas',
+      `Llegó una nueva postulación (${extracted.source}).\nNombre público: ${extracted.publicName}\n` +
+      `Entra a /admin para ver el detalle completo y confidencial.`
     );
     res.status(201).json({ ok: true });
   } catch (err) {

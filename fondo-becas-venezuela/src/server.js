@@ -5,6 +5,7 @@ const path = require('path');
 const { ensureSchema } = require('./db');
 const { adminAuth } = require('./middleware/auth');
 const publicRoutes = require('./routes/public');
+const equipmentRoutes = require('./routes/equipment');
 const { stripeWebhookHandler, formRouter } = require('./routes/webhooks');
 const adminRoutes = require('./routes/admin');
 
@@ -24,6 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.use('/api', publicRoutes);
+app.use('/api', equipmentRoutes); // expone /api/equipment-donations
 app.use('/api/webhook', formRouter); // expone /api/webhook/form
 app.use('/admin', adminAuth, adminRoutes);
 
